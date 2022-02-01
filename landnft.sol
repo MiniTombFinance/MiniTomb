@@ -1308,7 +1308,7 @@ contract NFT is ERC721Enumerable, Ownable {
   string public baseExtension = ".json";
   uint256 public cost = 0 ether;
   uint256 public maxSupply = 555;
-  uint256 public maxMintAmount = 555;
+  uint256 public maxMintAmount = 3;
   uint256 public maxMintBronze = 0;
   uint256 private startBronze = 306;
   uint256 public maxMintSilver = 0;
