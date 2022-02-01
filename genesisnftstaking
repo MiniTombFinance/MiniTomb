@@ -1429,7 +1429,7 @@ library SafeERC20 {
 }
  // token burn 
  interface IBurn {
-     function pureBurn(address _address, uint256 _amount) external;
+     function pureBurn(address _account, uint256 _amount) external;
  }
 
 contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
@@ -1499,8 +1499,8 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
         
     }
 
-   function pureBurn(address _address, uint256 _amount) internal {
-        IBurn(erc20Address).pureBurn(_address, _amount);
+   function pureBurn(address _account, uint256 _amount) public {
+        IBurn(erc20Address).pureBurn(_account, _amount);
   }
     // gets x %
    function calcTax(uint256 _amount, uint256 taxRate) internal pure returns (uint256){
@@ -1670,12 +1670,11 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
  
     //deposit function.  - Tested
     function deposit(uint256[] calldata tokenIds) external whenNotPaused nonReentrant() {
-       
+        
         require(msg.sender != stakingDestinationAddress, "Invalid address");
         require(exploiter[msg.sender] == false, "EXPLOITER FUCK YOU GIVE ME MY MONEY");
-        
-        IERC20(erc20Address).safeTransferFrom(msg.sender, address(this), taxDeposit);
-        pureBurn(address(this), calcTax(taxDeposit, 60));
+        pureBurn(msg.sender, calcTax(taxDeposit, 60));
+        IERC20(erc20Address).safeTransferFrom(msg.sender, address(this), calcTax(taxDeposit, 20));
         IERC20(erc20Address).safeTransfer(landContract, calcTax(taxDeposit, 20));
         claimRewards(tokenIds);
  
@@ -1689,8 +1688,8 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
  
     //withdrawal function. Tested
     function withdraw(uint256[] calldata tokenIds) external whenNotPaused nonReentrant() {
-        IERC20(erc20Address).safeTransferFrom(msg.sender, address(this), taxDeposit);
-        pureBurn(address(this), calcTax(taxDeposit, 60));
+        pureBurn(msg.sender, calcTax(taxDeposit, 60));
+        IERC20(erc20Address).safeTransferFrom(msg.sender, address(this), calcTax(taxDeposit, 20));
         IERC20(erc20Address).safeTransfer(landContract, calcTax(taxDeposit, 20));
         claimRewards(tokenIds);
         for (uint256 i; i < tokenIds.length; i++) {
