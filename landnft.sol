@@ -2132,7 +2132,7 @@ abstract contract ERC721Enumerable is ERC721, IERC721Enumerable {
  
 pragma solidity >=0.7.0 <0.9.0;
  
-contract MiniLand is ERC721Enumerable, Ownable {
+contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
   using Strings for uint256;
   using SafeERC20 for IERC20;
   string public baseURI;
@@ -2172,7 +2172,7 @@ contract MiniLand is ERC721Enumerable, Ownable {
   }
  
   // public
-  function mintBronze(uint256 _mintAmount) public payable {
+  function mintBronze(uint256 _mintAmount) public nonReentrant() {
     
     require(balanceOf(msg.sender) + _mintAmount <= 3, "LIMIT REACHED");
     require(maxMintBronze + _mintAmount <= 250, "SOLD OUT");
@@ -2200,7 +2200,7 @@ contract MiniLand is ERC721Enumerable, Ownable {
     }
   }
 
-   function mintSilver(uint256 _mintAmount) public payable {
+   function mintSilver(uint256 _mintAmount) public nonReentrant() {
     
     require(balanceOf(msg.sender) + _mintAmount <= 3, "LIMIT REACHED");
     require(maxMintSilver + _mintAmount <= 150, "SOLD OUT");
@@ -2228,7 +2228,7 @@ contract MiniLand is ERC721Enumerable, Ownable {
     }
   }
 
-    function mintGold(uint256 _mintAmount) public payable {
+    function mintGold(uint256 _mintAmount) public nonReentrant() {
     
     require(balanceOf(msg.sender) + _mintAmount <= 3, "LIMIT REACHED");
     require(maxMintGold + _mintAmount <= 100, "SOLD OUT");
@@ -2256,7 +2256,7 @@ contract MiniLand is ERC721Enumerable, Ownable {
     }
   }
 
-  function mintDiamond(uint256 _mintAmount) public payable {
+  function mintDiamond(uint256 _mintAmount) public nonReentrant() {
     
     require(balanceOf(msg.sender) + _mintAmount <= 3, "LIMIT REACHED");
     require(maxMintDiamond + _mintAmount <= 55, "SOLD OUT");
