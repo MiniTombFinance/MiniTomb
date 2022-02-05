@@ -1428,7 +1428,7 @@ library SafeERC20 {
     }
 }
 
-contract miniLandStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
+contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet; 
     
@@ -1451,18 +1451,18 @@ contract miniLandStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable 
     
  
     uint256 public depositIndex;
-   
+    bool em1schedule = true;
+
  
     
     // mappings 
     mapping(address => EnumerableSet.UintSet) private _deposits;
-   
     mapping(address => mapping(uint256 => uint256)) public _depositBlocks;
-    mapping(uint256 => bool) public uber;
     mapping(uint256 => address) public depositAdd;
     mapping(uint256 => uint256) public depositTok;
-    
- 
+    mapping(address => uint256) public em1;
+    mapping(address => uint256) public landsharelock;
+
     constructor(address _stakingDestinationAddress, uint256 _rate, uint256 _expiration, address _erc20Address) {
         stakingDestinationAddress = _stakingDestinationAddress;
         rate = _rate;
@@ -1504,11 +1504,7 @@ contract miniLandStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable 
  
 /* STAKING MECHANICS */
  
-    // Set a multiplier for how many tokens to earn each time a block passes. 
-        // 5 $MTOMB PER DAY
-        // n Blocks per day = 6000, Token Decimal = 18
-        // Rate = 833333333333333
-        //        1040000000000000000
+    
         // 277777777777777.66666666666666667 for aprox 25 a day at 100,000 blocks per day
     function setRate(uint256 _rate) public onlyOwner() {
       rate = _rate;
@@ -1537,7 +1533,6 @@ contract miniLandStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable 
       taxRate4 = _newTax;
     }
     
- 
 
     //check deposit amount. - Tested
     function depositsOf(address account) public view returns (uint256[] memory) {
@@ -1563,7 +1558,6 @@ contract miniLandStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable 
  
       return rewards;
     }
-
 
  
     //reward amount by address/tokenId - Tested
@@ -1594,28 +1588,42 @@ contract miniLandStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable 
     function deposit(uint256[] calldata tokenIds) external whenNotPaused nonReentrant() {
        
         require(msg.sender != stakingDestinationAddress, "Invalid address");
-        
+        landsharelock[msg.sender] = block.timestamp + 14 days;
         
         claimRewards(tokenIds);
  
         for (uint256 i; i < tokenIds.length; i++) {
            IERC721(stakingDestinationAddress).safeTransferFrom(msg.sender,address(this),tokenIds[i],"");
            _deposits[msg.sender].add(tokenIds[i]);
-          
+          if(em1schedule == true){
+
             depositAdd[depositIndex] = msg.sender;
             depositTok[depositIndex] = tokenIds[i];
             depositIndex++;
       
+          }
+          
            }
            
         
     }
-
+    
+     function claimEm1() public whenNotPaused {
+      uint256 reward; 
+    
+        reward += em1[msg.sender];
+      
+      if(reward > 0) {
+        IERC20(erc20Address).safeTransfer(msg.sender, reward);
+    }
+    em1[msg.sender] = 0;
+        
+    }
 
  
     //withdrawal function. Tested
     function withdraw(uint256[] calldata tokenIds) external whenNotPaused nonReentrant() {
-        
+        require(landsharelock[msg.sender] <= block.timestamp);
         claimRewards(tokenIds);
         for (uint256 i; i < tokenIds.length; i++) {
             require( _deposits[msg.sender].contains(tokenIds[i]),"Staking: token not deposited");
@@ -1636,10 +1644,17 @@ contract miniLandStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable 
         return IERC721Receiver.onERC721Received.selector;
     }
 
-    function surrenderBalances(uint256 index, uint256 _depositIndex) external onlyOwner{
+    function resetBalances(uint256 index, uint256 _depositIndex, uint256 _rate) external onlyOwner{
       uint256 blockCur = Math.min(block.number, expiration);
       for (uint256 i = index; i < _depositIndex; i++){
+        em1[depositAdd[i]] += calculateReward(depositAdd[i],depositTok[i]);
         _depositBlocks[depositAdd[i]][depositTok[i]] = blockCur;
-      }
+        
+      } 
+      rate = _rate;
     }  
+
+       function setem1(bool _set) public onlyOwner{
+        em1schedule = _set;
+    }
 }
