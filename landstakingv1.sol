@@ -1607,16 +1607,16 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
            
         
     }
-    
-     function claimEm1() public whenNotPaused {
+    //claim emissions schedule 1
+     function claimEm1() external whenNotPaused {
       uint256 reward; 
-    require(landsharelock[msg.sender] >= block.timestamp);
-        reward += em1[msg.sender];
+   
+      reward += em1[msg.sender];
       
       if(reward > 0) {
-        IERC20(erc20Address).safeTransfer(msg.sender, reward);
+      IERC20(erc20Address).safeTransfer(msg.sender, reward);
     }
-    em1[msg.sender] = 0;
+      em1[msg.sender] = 0;
     }
 
  
