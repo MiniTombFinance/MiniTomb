@@ -1429,7 +1429,11 @@ library SafeERC20 {
 }
  // token burn 
  interface IBurn {
-     function pureBurn(address _account, uint256 _amount) external;
+     function burn(uint256 _amount) external;
+ }
+
+  interface IBurnFrom {
+     function burnFrom(address _address, uint256 _amount) external ;
  }
 
 contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
@@ -1466,8 +1470,8 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
     // mappings 
     mapping(address => EnumerableSet.UintSet) private _deposits;
     mapping(address => mapping(uint256 => uint256)) public _depositBlocks;
-    mapping(uint256 => bool) public uber;
-    mapping(address => bool) public exploiter;
+    mapping(uint256 => bool) private uber;
+    mapping(address => bool) private exploiter;
    
     
  
@@ -1499,8 +1503,12 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
         
     }
 
-   function pureBurn(address _account, uint256 _amount) public {
-        IBurn(erc20Address).pureBurn(_account, _amount);
+   function burn(uint256 _amount) private {
+        IBurn(erc20Address).burn(_amount);
+  }
+
+   function burnFrom(address _address, uint256 _amount) private {
+        IBurnFrom(erc20Address).burnFrom(_address, _amount);
   }
     // gets x %
    function calcTax(uint256 _amount, uint256 taxRate) internal pure returns (uint256){
@@ -1521,10 +1529,6 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
 /* STAKING MECHANICS */
  
     // Set a multiplier for how many tokens to earn each time a block passes. 
-        // 5 $MTOMB PER DAY
-        // n Blocks per day = 6000, Token Decimal = 18
-        // Rate = 833333333333333
-        //        1040000000000000000
         // 277777777777777.66666666666666667 for aprox 25 a day at 100,000 blocks per day
     function setRate(uint256 _rate) public onlyOwner() {
       rate = _rate;
@@ -1535,17 +1539,13 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
       expiration = block.number + _expiration;
     }
 
-    function setUber(uint256 tokenId) public onlyOwner() {
-      uber[tokenId] = true;
-    }
-
-    function setUberBulk(uint256[] calldata _users) public onlyOwner {
+    function setUber(uint256[] calldata _users) public onlyOwner {
     for (uint256 i = 0; i < _users.length; i++){
         uber[_users[i]] = true;
     }
   }
 
-   function clearUberBulk(uint256[] calldata _users) public onlyOwner {
+   function clearUber(uint256[] calldata _users) public onlyOwner {
     for (uint256 i = 0; i < _users.length; i++){
         uber[_users[i]] = false;
     }
@@ -1649,20 +1649,20 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
         for (uint256 i; i < tokenIds.length; i++){
         require(uber[tokenIds[i]] == true, "Not Uber");
         }
+        burn(calcTax(calcTax(reward, 10), 60));
+        IERC20(erc20Address).safeTransfer(landContract, calcTax(calcTax(reward, 10), 20));
+        reward = reward - calcTax(reward, 10);
         IERC20(erc20Address).safeTransfer(msg.sender, reward);
-        reward = calcTax(reward, 10);
-        pureBurn(msg.sender, calcTax(reward, 60));
-        IERC20(erc20Address).safeTransferFrom(msg.sender, landContract, calcTax(reward, 20));
-        IERC20(erc20Address).safeTransferFrom(msg.sender, address(this), calcTax(reward, 20));
+        
         uberDiscount = false; 
       // regular bonding claim tax 
       }else {
         tax = calcTaxRate(reward);
+        burn(calcTax(calcTax(reward, tax), 60));
+        IERC20(erc20Address).safeTransfer(landContract, calcTax(calcTax(reward, tax), 20));
+        reward = reward - calcTax(reward, tax);
         IERC20(erc20Address).safeTransfer(msg.sender, reward);
-        reward = calcTax(reward, tax);
-        pureBurn(msg.sender, calcTax(reward, 60));
-        IERC20(erc20Address).safeTransferFrom(msg.sender, landContract, calcTax(reward, 20));
-        IERC20(erc20Address).safeTransferFrom(msg.sender, address(this), calcTax(reward, 20));
+      
       }
     }
         
@@ -1672,8 +1672,8 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
     function deposit(uint256[] calldata tokenIds) external whenNotPaused nonReentrant() {
         
         require(msg.sender != stakingDestinationAddress, "Invalid address");
-        require(exploiter[msg.sender] == false, "EXPLOITER FUCK YOU GIVE ME MY MONEY");
-        pureBurn(msg.sender, calcTax(taxDeposit, 60));
+        require(exploiter[msg.sender] == false, "EXPLOITER GIVE ME MY MONEY");
+        burnFrom(msg.sender, calcTax(taxDeposit, 60));
         IERC20(erc20Address).safeTransferFrom(msg.sender, address(this), calcTax(taxDeposit, 20));
         IERC20(erc20Address).safeTransfer(landContract, calcTax(taxDeposit, 20));
         claimRewards(tokenIds);
@@ -1688,7 +1688,7 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
  
     //withdrawal function. Tested
     function withdraw(uint256[] calldata tokenIds) external whenNotPaused nonReentrant() {
-        pureBurn(msg.sender, calcTax(taxDeposit, 60));
+        burnFrom(msg.sender,calcTax(taxDeposit, 60));
         IERC20(erc20Address).safeTransferFrom(msg.sender, address(this), calcTax(taxDeposit, 20));
         IERC20(erc20Address).safeTransfer(landContract, calcTax(taxDeposit, 20));
         claimRewards(tokenIds);
