@@ -1461,7 +1461,7 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
     mapping(uint256 => address) public depositAdd;
     mapping(uint256 => uint256) public depositTok;
     mapping(address => uint256) public em1;
-    mapping(address => uint256) public landsharelock;
+    uint256 public landsharelock;
 
     constructor(address _stakingDestinationAddress, uint256 _rate, uint256 _expiration, address _erc20Address) {
         stakingDestinationAddress = _stakingDestinationAddress;
@@ -1469,6 +1469,7 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
         expiration = block.number + _expiration;
         erc20Address = _erc20Address;
         _pause();
+        landsharelock = block.timestamp + 5 minutes;
     }
 
     function calcTaxRate(uint256 tokenId) internal view returns (uint256 tax){
@@ -1588,7 +1589,7 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
     function deposit(uint256[] calldata tokenIds) external whenNotPaused nonReentrant() {
        
         require(msg.sender != stakingDestinationAddress, "Invalid address");
-        landsharelock[msg.sender] = block.timestamp + 14 days;
+        
         
         claimRewards(tokenIds);
  
@@ -1622,7 +1623,7 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
  
     //withdrawal function. Tested
     function withdraw(uint256[] calldata tokenIds) external whenNotPaused nonReentrant() {
-        require(landsharelock[msg.sender] <= block.timestamp);
+        require(landsharelock <= block.timestamp, "Land Share Lock");
         claimRewards(tokenIds);
         for (uint256 i; i < tokenIds.length; i++) {
             require( _deposits[msg.sender].contains(tokenIds[i]),"Staking: token not deposited");
@@ -1646,7 +1647,8 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
     function resetBalances(uint256 index, uint256 _depositIndex, uint256 _rate) external onlyOwner{
       uint256 blockCur = Math.min(block.number, expiration);
       for (uint256 i = index; i < _depositIndex; i++){
-        em1[depositAdd[i]] += calculateReward(depositAdd[i],depositTok[i]);
+                              
+        em1[depositAdd[i]] += calcTax(calculateReward(depositAdd[i],depositTok[i]), calcTaxRate(depositTok[i]));
         _depositBlocks[depositAdd[i]][depositTok[i]] = blockCur;
         
       } 
