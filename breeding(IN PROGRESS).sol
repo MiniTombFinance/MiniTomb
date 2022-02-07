@@ -1218,6 +1218,98 @@ abstract contract Ownable is Context {
     }
 
 }
+
+/**
+ * @title SafeERC20
+ * @dev Wrappers around ERC20 operations that throw on failure (when the token
+ * contract returns false). Tokens that return no value (and instead revert or
+ * throw on failure) are also supported, non-reverting calls are assumed to be
+ * successful.
+ * To use this library you can add a `using SafeERC20 for IERC20;` statement to your contract,
+ * which allows you to call the safe operations as `token.safeTransfer(...)`, etc.
+ */
+library SafeERC20 {
+    using Address for address;
+
+    function safeTransfer(
+        IERC20 token,
+        address to,
+        uint256 value
+    ) internal {
+        _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+    }
+
+    function safeTransferFrom(
+        IERC20 token,
+        address from,
+        address to,
+        uint256 value
+    ) internal {
+        _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+    }
+
+    /**
+     * @dev Deprecated. This function has issues similar to the ones found in
+     * {IERC20-approve}, and its usage is discouraged.
+     *
+     * Whenever possible, use {safeIncreaseAllowance} and
+     * {safeDecreaseAllowance} instead.
+     */
+    function safeApprove(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        // safeApprove should only be called when setting an initial allowance,
+        // or when resetting it to zero. To increase and decrease it, use
+        // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
+        require(
+            (value == 0) || (token.allowance(address(this), spender) == 0),
+            "SafeERC20: approve from non-zero to non-zero allowance"
+        );
+        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
+    }
+
+    function safeIncreaseAllowance(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        uint256 newAllowance = token.allowance(address(this), spender) + value;
+        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    }
+
+    function safeDecreaseAllowance(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        unchecked {
+            uint256 oldAllowance = token.allowance(address(this), spender);
+            require(oldAllowance >= value, "SafeERC20: decreased allowance below zero");
+            uint256 newAllowance = oldAllowance - value;
+            _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+        }
+    }
+
+    /**
+     * @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement
+     * on the return value: the return value is optional (but if data is returned, it must not be false).
+     * @param token The token targeted by the call.
+     * @param data The call data (encoded using abi.encode or one of its variants).
+     */
+    function _callOptionalReturn(IERC20 token, bytes memory data) private {
+        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
+        // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
+        // the target address contains contract code and also asserts for success in the low-level call.
+
+        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
+        if (returndata.length > 0) {
+            // Return data is optional
+            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+        }
+    }
+}
  
 pragma solidity >=0.7.0 <0.9.0;
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol"; 
@@ -1230,8 +1322,9 @@ interface Iuri1 {
      function tokenURI(uint256 tokenId) external returns (string memory);
  }
 
-  interface IBurn {
-     function pureBurn(address _address, uint256 _amount) external;
+
+  interface IBurnFrom {
+     function burnFrom(address _address, uint256 _amount) external ;
  }
 
   interface IBalance {
@@ -1246,6 +1339,7 @@ interface Iuri1 {
   }
 
 contract Breeder is ERC721Enumerable, Ownable, ReentrancyGuard {
+  using SafeERC20 for IERC20;
   using Strings for uint256;
  
   string public baseURI;
@@ -1313,8 +1407,10 @@ contract Breeder is ERC721Enumerable, Ownable, ReentrancyGuard {
   function _baseURI() internal view virtual override returns (string memory) {
     return baseURI;
   }
-  function pureBurn(address _address, uint256 _amount) internal {
-    IBurn(erc20Address).pureBurn(_address, _amount);
+ 
+
+   function burnFrom(address _address, uint256 _amount) private {
+        IBurnFrom(erc20Address).burnFrom(_address, _amount);
   }
   function lootBurn(address owner, uint _id, uint _amount) internal{
       IBurner(erc1155Address).lootBurn(owner, _id, _amount);
@@ -1372,12 +1468,16 @@ contract Breeder is ERC721Enumerable, Ownable, ReentrancyGuard {
         return false;
     }
 
+  function burn(uint256 tokenId) private {
+        //solhint-disable-next-line max-line-length
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721Burnable: caller is not owner nor approved");
+        _burn(tokenId);
+    }
    
  
   // public
 
   function mintGuinea (uint256 tokenId) public nonReentrant(){
-    
     uint256  balance1 = balanceChecker1();
     uint256  balance2 = balanceChecker2();
     require(!paused, "the contract is paused");
@@ -1387,9 +1487,9 @@ contract Breeder is ERC721Enumerable, Ownable, ReentrancyGuard {
     require(tokenId > 0, "TokenId can't be 0");
     require(supply + 1 <= maxSupply, "max NFT limit exceeded");
     require(walletOfOwnerChecker1(msg.sender, tokenId) == true, "Not tokenId owner");
-    pureBurn(msg.sender, calcTax(cost, 70));
-    IERC20(erc20Address).transferFrom(msg.sender, landContract, calcTax(cost, 20));
-    IERC20(erc20Address).transferFrom(msg.sender, stakingContract1, calcTax(cost, 10));
+    burnFrom(msg.sender, calcTax(cost, 70));
+    IERC20(erc20Address).safeTransferFrom(msg.sender, landContract, calcTax(cost, 20));
+    IERC20(erc20Address).safeTransferFrom(msg.sender, stakingContract1, calcTax(cost, 10));
     blacklist1[tokenId] = true;
      if (blacklistIndex1 <= tokenId){
         blacklistIndex1 = tokenId;
@@ -1410,9 +1510,9 @@ contract Breeder is ERC721Enumerable, Ownable, ReentrancyGuard {
     require(tokenId > 0, "TokenId can't be 0");
     require(supply + 1 <= maxSupply, "max NFT limit exceeded");
     require(walletOfOwnerChecker2(msg.sender, tokenId) == true, "Not tokenId owner");
-    pureBurn(msg.sender, calcTax(cost, 70));
-    IERC20(erc20Address).transferFrom(msg.sender, landContract, calcTax(cost, 20));
-    IERC20(erc20Address).transferFrom(msg.sender, stakingContract1, calcTax(cost, 10));
+    burnFrom(msg.sender, calcTax(cost, 70));
+    IERC20(erc20Address).safeTransferFrom(msg.sender, landContract, calcTax(cost, 20));
+    IERC20(erc20Address).safeTransferFrom(msg.sender, stakingContract1, calcTax(cost, 10));
     blacklist2[tokenId] = true;
     if (blacklistIndex2 <= tokenId){
        blacklistIndex2 = tokenId;
@@ -1434,9 +1534,9 @@ contract Breeder is ERC721Enumerable, Ownable, ReentrancyGuard {
     require(tokenId > 0, "TokenId can't be 0");
     require(supply + 1 <= maxSupply, "max NFT limit exceeded");
     require(walletOfOwnerChecker3(msg.sender, tokenId) == true, "Not tokenId owner");
-    pureBurn(msg.sender, calcTax(cost, 70));
-    IERC20(erc20Address).transferFrom(msg.sender, landContract, calcTax(cost, 20));
-    IERC20(erc20Address).transferFrom(msg.sender, stakingContract3, calcTax(cost, 10));
+    burnFrom(msg.sender, calcTax(cost, 70));
+    IERC20(erc20Address).safeTransferFrom(msg.sender, landContract, calcTax(cost, 20));
+    IERC20(erc20Address).safeTransferFrom(msg.sender, stakingContract3, calcTax(cost, 10));
     blacklist3[tokenId] = true;
     if (blacklistIndex3 <= tokenId){
         blacklistIndex3 = tokenId;
@@ -1455,10 +1555,11 @@ contract Breeder is ERC721Enumerable, Ownable, ReentrancyGuard {
   }
 
   function fusion(uint256 burning, uint256 leveling) public nonReentrant(){
-        uint256 newLevel = fusionLevel[leveling];
-        _burn(burning);
-        fusionLevel[leveling] = newLevel;
-        lootBurn(msg.sender, 1, 1);
+        require(fusionLevel[leveling] == 0);
+        
+        burn(burning);
+        
+       // lootBurn(msg.sender, 1, 1);
   }
 
    function generationCheck(uint256 tokenId) public nonReentrant(){
