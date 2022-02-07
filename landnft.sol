@@ -2140,13 +2140,13 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
   uint256 public maxSupply = 555;
   uint256 public maxMintAmount = 3;
   uint256 public maxMintBronze = 0;
-  uint256 private startBronze = 306;
+  uint256 public startBronze = 306;
   uint256 public maxMintSilver = 0;
-  uint256 private startSilver = 156;
+  uint256 public startSilver = 156;
   uint256 public maxMintGold = 0;
-  uint256 private startGold = 56;
+  uint256 public startGold = 56;
   uint256 public maxMintDiamond = 0;
-  uint256 private startDiamond = 1;
+  uint256 public startDiamond = 1;
   bool public paused = false;
   bool public onlyWhitelisted = false;
   mapping(address => uint256) public whitelistedAddresses;
@@ -2174,7 +2174,7 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
   // public
   function mintBronze(uint256 _mintAmount) public nonReentrant() {
     
-    require(balanceOf(msg.sender) + _mintAmount <= 3, "LIMIT REACHED");
+    require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
     require(maxMintBronze + _mintAmount <= 250, "SOLD OUT");
     require(!paused, "the contract is paused");
     uint256 supply = totalSupply();
@@ -2187,7 +2187,7 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
             require(whitelistedAddresses[msg.sender] > 0, "No More Free Mints");
             require(whitelistedAddresses[msg.sender] >= _mintAmount, "To many mints");
         }
-            IERC20(erc20Address).safeTransferFrom(msg.sender, treasuryAddress, 250000000000000000000 * _mintAmount);
+            IERC20(erc20Address).safeTransferFrom(msg.sender, treasuryAddress, 250 ether * _mintAmount);
    }
     
     for (uint256 i = 1; i <= _mintAmount; i++) {
@@ -2197,12 +2197,13 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
       _safeMint(msg.sender, startBronze);
       startBronze++;
       maxMintBronze++;
+      limit[msg.sender]++;
     }
   }
 
    function mintSilver(uint256 _mintAmount) public nonReentrant() {
     
-    require(balanceOf(msg.sender) + _mintAmount <= 3, "LIMIT REACHED");
+    require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
     require(maxMintSilver + _mintAmount <= 150, "SOLD OUT");
     require(!paused, "the contract is paused");
     uint256 supply = totalSupply();
@@ -2215,7 +2216,7 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
             require(whitelistedAddresses[msg.sender] > 0, "No More Free Mints");
             require(whitelistedAddresses[msg.sender] >= _mintAmount, "To many mints");
         }
-            IERC20(erc20Address).safeTransferFrom(msg.sender, treasuryAddress, 1350000000000000000000 * _mintAmount);
+            IERC20(erc20Address).safeTransferFrom(msg.sender, treasuryAddress, 1350 ether * _mintAmount);
    }
     
     for (uint256 i = 1; i <= _mintAmount; i++) {
@@ -2225,12 +2226,13 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
       _safeMint(msg.sender, startSilver);
       startSilver++;
       maxMintSilver++;
+      limit[msg.sender]++;
     }
   }
 
     function mintGold(uint256 _mintAmount) public nonReentrant() {
     
-    require(balanceOf(msg.sender) + _mintAmount <= 3, "LIMIT REACHED");
+    require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
     require(maxMintGold + _mintAmount <= 100, "SOLD OUT");
     require(!paused, "the contract is paused");
     uint256 supply = totalSupply();
@@ -2243,7 +2245,7 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
             require(whitelistedAddresses[msg.sender] > 0, "No More Free Mints");
             require(whitelistedAddresses[msg.sender] >= _mintAmount, "To many mints");
         }
-            IERC20(erc20Address).safeTransferFrom(msg.sender, treasuryAddress, 2700000000000000000000 * _mintAmount);
+            IERC20(erc20Address).safeTransferFrom(msg.sender, treasuryAddress, 2700 ether * _mintAmount);
    }
     
     for (uint256 i = 1; i <= _mintAmount; i++) {
@@ -2253,12 +2255,13 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
       _safeMint(msg.sender, startGold);
       startGold++;
       maxMintGold++;
+      limit[msg.sender]++;
     }
   }
 
   function mintDiamond(uint256 _mintAmount) public nonReentrant() {
     
-    require(balanceOf(msg.sender) + _mintAmount <= 3, "LIMIT REACHED");
+    require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
     require(maxMintDiamond + _mintAmount <= 55, "SOLD OUT");
     require(!paused, "the contract is paused");
     uint256 supply = totalSupply();
@@ -2271,7 +2274,7 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
             require(whitelistedAddresses[msg.sender] > 0, "No More Free Mints");
             require(whitelistedAddresses[msg.sender] >= _mintAmount, "To many mints");
         }
-            IERC20(erc20Address).safeTransferFrom(msg.sender, treasuryAddress, 5400000000000000000000 * _mintAmount);
+            IERC20(erc20Address).safeTransferFrom(msg.sender, treasuryAddress, 5400 ether * _mintAmount);
    }
     
     for (uint256 i = 1; i <= _mintAmount; i++) {
@@ -2281,6 +2284,7 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
       _safeMint(msg.sender, startDiamond);
       startDiamond++;
       maxMintDiamond++;
+      limit[msg.sender]++;
     }
   }
  
