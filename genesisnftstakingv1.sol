@@ -1598,6 +1598,10 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
       taxAmt4 = _newTaxAmt;
     }
 
+     function seterc20Address(address _erc20Address) public onlyOwner() {
+      erc20Address = _erc20Address;
+    }
+
     //check deposit amount. - Tested
     function depositsOf(address account) public view returns (uint256[] memory) {
       EnumerableSet.UintSet storage depositSet = _deposits[account];
@@ -1616,7 +1620,8 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
  
       for (uint256 i; i < tokenIds.length; i++) {
         uint256 tokenId = tokenIds[i];
-        rewards[i] = rate * (_deposits[account].contains(tokenId) ? 1 : 0) * (Math.min(block.number, expiration) - _depositBlocks[account][tokenId]);
+       // rewards[i] = rate * (_deposits[account].contains(tokenId) ? 1 : 0) * (Math.min(block.number, expiration) - _depositBlocks[account][tokenId]);
+        rewards[i] = calcTax(rate * (_deposits[account].contains(tokenId) ? 1 : 0) * (Math.min(block.number, expiration) - _depositBlocks[account][tokenId]), calcTaxRate(calculateReward(account,tokenId)));
  
       }
  
@@ -1722,9 +1727,14 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
     }
  
     //withdrawal function. 
-    function withdrawTokens() external onlyOwner {
+    function withdrawAllTokens() external onlyOwner {
         uint256 tokenSupply = IERC20(erc20Address).balanceOf(address(this));
         IERC20(erc20Address).safeTransfer(msg.sender, tokenSupply);
+    }
+
+     function withdrawTokens(address _erc20Address, uint256 _amount) external onlyOwner {
+      
+        IERC20(_erc20Address).safeTransfer(msg.sender, _amount);
     }
  
     function onERC721Received(address,address,uint256,bytes calldata) external pure override returns (bytes4) {
