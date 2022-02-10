@@ -1543,7 +1543,6 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
       for (uint256 i; i < depositSet.length(); i++) {
         tokenIds[i] = depositSet.at(i);
       }
- 
       return tokenIds;
     }
  
@@ -1556,7 +1555,6 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
         rewards[i] = rate * (_deposits[account].contains(tokenId) ? 1 : 0) * (Math.min(block.number, expiration) - _depositBlocks[account][tokenId]);
  
       }
- 
       return rewards;
     }
 
@@ -1581,9 +1579,8 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
       }
       if(reward > 0) {
         IERC20(erc20Address).safeTransfer(msg.sender, calcTax(reward, tax));
-    }
-        
-    }
+    }   
+   }
  
     //deposit function.  - Tested
     function deposit(uint256[] calldata tokenIds) external whenNotPaused nonReentrant() {
@@ -1603,16 +1600,14 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
             depositIndex++;
       
           }
-          
-           }
-           
-        
-    }
+        }     
+      }
+
     //claim emissions schedule 1
-     function claimEm1() external whenNotPaused {
+     function claimEm1() external whenNotPaused nonReentrant(){
       uint256 reward; 
    
-      reward += em1[msg.sender];
+      reward = em1[msg.sender];
       
       if(reward > 0) {
       IERC20(erc20Address).safeTransfer(msg.sender, reward);
@@ -1644,9 +1639,9 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
         return IERC721Receiver.onERC721Received.selector;
     }
 
-    function resetBalances(uint256 index, uint256 _depositIndex, uint256 _rate) external onlyOwner{
+    function resetBalances(uint256 startindex, uint256 endIndex, uint256 _rate) external onlyOwner{
       uint256 blockCur = Math.min(block.number, expiration);
-      for (uint256 i = index; i < _depositIndex; i++){
+      for (uint256 i = startindex; i < endIndex; i++){
                               
         em1[depositAdd[i]] += calcTax(calculateReward(depositAdd[i],depositTok[i]), calcTaxRate(depositTok[i]));
         _depositBlocks[depositAdd[i]][depositTok[i]] = blockCur;
@@ -1655,7 +1650,7 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
       rate = _rate;
     }  
 
-       function setem1(bool _set) public onlyOwner{
+       function setem1(bool _set) external onlyOwner{
         em1schedule = _set;
     }
 }
