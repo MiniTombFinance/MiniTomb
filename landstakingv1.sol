@@ -1516,7 +1516,9 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
       expiration = block.number + _expiration;
     }
 
-   
+      function seterc20Address(address _erc20Address) public onlyOwner() {
+      erc20Address = _erc20Address;
+    }
 
     function setTaxRate1(uint256 _newTax) public onlyOwner() {
       taxRate1 = _newTax;
@@ -1552,8 +1554,8 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
  
       for (uint256 i; i < tokenIds.length; i++) {
         uint256 tokenId = tokenIds[i];
-        rewards[i] = rate * (_deposits[account].contains(tokenId) ? 1 : 0) * (Math.min(block.number, expiration) - _depositBlocks[account][tokenId]);
- 
+        // rewards[i] = rate * (_deposits[account].contains(tokenId) ? 1 : 0) * (Math.min(block.number, expiration) - _depositBlocks[account][tokenId]);
+        rewards[i] = calcTax(rate * (_deposits[account].contains(tokenId) ? 1 : 0) * (Math.min(block.number, expiration) - _depositBlocks[account][tokenId]), calcTaxRate(tokenId));
       }
       return rewards;
     }
@@ -1628,11 +1630,17 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
         }
         
     }
- 
-    //withdrawal function. 
-    function withdrawTokens() external onlyOwner {
+
+     //withdrawal function. 
+    function withdrawAllTokens() external onlyOwner {
         uint256 tokenSupply = IERC20(erc20Address).balanceOf(address(this));
         IERC20(erc20Address).safeTransfer(msg.sender, tokenSupply);
+    }
+ 
+   
+    function withdrawTokens(address _erc20Address, uint256 _amount) external onlyOwner {
+      
+        IERC20(_erc20Address).safeTransfer(msg.sender, _amount);
     }
  
     function onERC721Received(address,address,uint256,bytes calldata) external pure override returns (bytes4) {
