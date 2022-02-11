@@ -2141,12 +2141,12 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
   string public baseURIDiamond;
   string public baseExtension = ".json";
   uint256 public maxSupply = 555;
-  uint256 public maxMintAmount = 300;
+  uint256 public maxMintAmount = 3;
   uint256 public maxMintBronze = 0;
   uint256 public maxMintSilver = 0;
   uint256 public maxMintGold = 0;
   uint256 public maxMintDiamond = 0;
-  bool public paused = false;
+  bool public paused = true;
   bool public onlyWhitelisted = false;
   mapping(address => uint256) public whitelistedAddresses;
   mapping(address => uint256) public limit;
