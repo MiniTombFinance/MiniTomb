@@ -2135,48 +2135,62 @@ pragma solidity >=0.7.0 <0.9.0;
 contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
   using Strings for uint256;
   using SafeERC20 for IERC20;
-  string public baseURI;
+  string public baseURIBronze;
+  string public baseURISilver;
+  string public baseURIGold;
+  string public baseURIDiamond;
   string public baseExtension = ".json";
   uint256 public maxSupply = 555;
-  uint256 public maxMintAmount = 3;
+  uint256 public maxMintAmount = 300;
   uint256 public maxMintBronze = 0;
-  uint256 public startBronze = 306;
   uint256 public maxMintSilver = 0;
-  uint256 public startSilver = 156;
   uint256 public maxMintGold = 0;
-  uint256 public startGold = 56;
   uint256 public maxMintDiamond = 0;
-  uint256 public startDiamond = 1;
   bool public paused = false;
   bool public onlyWhitelisted = false;
   mapping(address => uint256) public whitelistedAddresses;
   mapping(address => uint256) public limit;
+  mapping(uint256 => uint256) public deedType;
   address public erc20Address;
   address  public treasuryAddress;
   constructor(
     string memory _name,
     string memory _symbol,
-    string memory _initBaseURI,
     address _erc20Address,
-    address _treasuryAddress
-    
+    address _treasuryAddress,
+    string memory _baseURIBronze,
+    string memory _baseURISilver,
+    string memory _baseURIGold,
+    string memory _baseURIDiamond
   ) ERC721(_name, _symbol) {
-    setBaseURI(_initBaseURI);
+    baseURIBronze = _baseURIBronze;
+    baseURISilver = _baseURISilver;
+    baseURIGold = _baseURIGold;
+    baseURIDiamond = _baseURIDiamond;
     erc20Address = _erc20Address;
     treasuryAddress= _treasuryAddress;
   }
  
   // internal
-  function _baseURI() internal view virtual override returns (string memory) {
-    return baseURI;
+  function _newbaseURI(uint256 tokenId) internal view virtual returns (string memory uri) {
+     if(deedCheck(tokenId) == 4){
+         return baseURIDiamond;
+       }else if(deedCheck(tokenId) == 3){
+         return baseURIGold;
+       }else if(deedCheck(tokenId) == 2){
+         return baseURISilver;
+       }else if(deedCheck(tokenId) == 1){
+         return baseURIBronze;
+       }
   }
+  
  
   // public
   function mintBronze(uint256 _mintAmount) public nonReentrant() {
-    
-    require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
-    require(maxMintBronze + _mintAmount <= 250, "SOLD OUT");
+    uint256 bronze = 1;
     require(!paused, "the contract is paused");
+  //  require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
+    require(maxMintBronze + _mintAmount <= 250, "SOLD OUT");
     uint256 supply = totalSupply();
     require(_mintAmount > 0, "need to mint at least 1 NFT");
     require(_mintAmount <= maxMintAmount, "max mint amount per session exceeded");
@@ -2194,18 +2208,18 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
        if (whitelistedAddresses[msg.sender] > 0){
        whitelistedAddresses[msg.sender]--;
        }
-      _safeMint(msg.sender, startBronze);
-      startBronze++;
+      _safeMint(msg.sender, supply + i);
+      deedType[supply + i] = bronze;
       maxMintBronze++;
       limit[msg.sender]++;
     }
   }
 
    function mintSilver(uint256 _mintAmount) public nonReentrant() {
-    
-    require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
-    require(maxMintSilver + _mintAmount <= 150, "SOLD OUT");
+    uint256 silver = 2;
     require(!paused, "the contract is paused");
+  //  require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
+    require(maxMintSilver + _mintAmount <= 150, "SOLD OUT");
     uint256 supply = totalSupply();
     require(_mintAmount > 0, "need to mint at least 1 NFT");
     require(_mintAmount <= maxMintAmount, "max mint amount per session exceeded");
@@ -2223,18 +2237,18 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
        if (whitelistedAddresses[msg.sender] > 0){
        whitelistedAddresses[msg.sender]--;
        }
-      _safeMint(msg.sender, startSilver);
-      startSilver++;
+      _safeMint(msg.sender, supply + i);
+      deedType[supply + i] = silver;
       maxMintSilver++;
       limit[msg.sender]++;
     }
   }
 
     function mintGold(uint256 _mintAmount) public nonReentrant() {
-    
-    require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
-    require(maxMintGold + _mintAmount <= 100, "SOLD OUT");
+    uint256 gold = 3;
     require(!paused, "the contract is paused");
+   // require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
+    require(maxMintGold + _mintAmount <= 100, "SOLD OUT");
     uint256 supply = totalSupply();
     require(_mintAmount > 0, "need to mint at least 1 NFT");
     require(_mintAmount <= maxMintAmount, "max mint amount per session exceeded");
@@ -2252,18 +2266,18 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
        if (whitelistedAddresses[msg.sender] > 0){
        whitelistedAddresses[msg.sender]--;
        }
-      _safeMint(msg.sender, startGold);
-      startGold++;
+      _safeMint(msg.sender, supply + i);
+      deedType[supply + i] = gold;
       maxMintGold++;
       limit[msg.sender]++;
     }
   }
 
   function mintDiamond(uint256 _mintAmount) public nonReentrant() {
-    
-    require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
-    require(maxMintDiamond + _mintAmount <= 55, "SOLD OUT");
+    uint256 diamond = 4;
     require(!paused, "the contract is paused");
+  //  require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
+    require(maxMintDiamond + _mintAmount <= 55, "SOLD OUT");
     uint256 supply = totalSupply();
     require(_mintAmount > 0, "need to mint at least 1 NFT");
     require(_mintAmount <= maxMintAmount, "max mint amount per session exceeded");
@@ -2281,8 +2295,8 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
        if (whitelistedAddresses[msg.sender] > 0){
        whitelistedAddresses[msg.sender]--;
        }
-      _safeMint(msg.sender, startDiamond);
-      startDiamond++;
+      _safeMint(msg.sender, supply + i);
+      deedType[supply + i] = diamond;
       maxMintDiamond++;
       limit[msg.sender]++;
     }
@@ -2308,10 +2322,14 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
       "ERC721Metadata: URI query for nonexistent token"
     );
     
-    string memory currentBaseURI = _baseURI();
+    string memory currentBaseURI = _newbaseURI(tokenId);
     return bytes(currentBaseURI).length > 0
         ? string(abi.encodePacked(currentBaseURI, tokenId.toString(), baseExtension))
         : "";
+  }
+
+  function deedCheck(uint256 tokenId) public view returns(uint256){
+    return deedType[tokenId];
   }
  
   //only owner
@@ -2322,8 +2340,20 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
     maxMintAmount = _newmaxMintAmount;
   }
  
-  function setBaseURI(string memory _newBaseURI) public onlyOwner {
-    baseURI = _newBaseURI;
+  function setBaseURIDiamond(string memory _newBaseURI) public onlyOwner {
+    baseURIDiamond = _newBaseURI;
+  }
+
+   function setBaseURIGold(string memory _newBaseURI) public onlyOwner {
+    baseURIGold = _newBaseURI;
+  }
+
+   function setBaseURISilver(string memory _newBaseURI) public onlyOwner {
+    baseURISilver = _newBaseURI;
+  }
+
+   function setBaseURIBronze(string memory _newBaseURI) public onlyOwner {
+    baseURIBronze = _newBaseURI;
   }
  
   function setBaseExtension(string memory _newBaseExtension) public onlyOwner {
