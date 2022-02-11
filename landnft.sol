@@ -2184,12 +2184,11 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
        }
   }
   
- 
   // public
   function mintBronze(uint256 _mintAmount) public nonReentrant() {
     uint256 bronze = 1;
     require(!paused, "the contract is paused");
-  //  require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
+    require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
     require(maxMintBronze + _mintAmount <= 250, "SOLD OUT");
     uint256 supply = totalSupply();
     require(_mintAmount > 0, "need to mint at least 1 NFT");
@@ -2218,7 +2217,7 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
    function mintSilver(uint256 _mintAmount) public nonReentrant() {
     uint256 silver = 2;
     require(!paused, "the contract is paused");
-  //  require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
+    require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
     require(maxMintSilver + _mintAmount <= 150, "SOLD OUT");
     uint256 supply = totalSupply();
     require(_mintAmount > 0, "need to mint at least 1 NFT");
@@ -2247,7 +2246,7 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
     function mintGold(uint256 _mintAmount) public nonReentrant() {
     uint256 gold = 3;
     require(!paused, "the contract is paused");
-   // require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
+    require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
     require(maxMintGold + _mintAmount <= 100, "SOLD OUT");
     uint256 supply = totalSupply();
     require(_mintAmount > 0, "need to mint at least 1 NFT");
@@ -2276,7 +2275,7 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
   function mintDiamond(uint256 _mintAmount) public nonReentrant() {
     uint256 diamond = 4;
     require(!paused, "the contract is paused");
-  //  require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
+    require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
     require(maxMintDiamond + _mintAmount <= 55, "SOLD OUT");
     uint256 supply = totalSupply();
     require(_mintAmount > 0, "need to mint at least 1 NFT");
