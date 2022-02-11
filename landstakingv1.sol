@@ -1428,6 +1428,10 @@ library SafeERC20 {
     }
 }
 
+interface IDeedCheck {
+    function deedCheck(uint256 tokenId) external view returns(uint256);
+}
+
 contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet; 
@@ -1444,14 +1448,14 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
     uint256 public rate; 
     
     // tax rate amounts
-    uint256 public taxRate1 = 100;
-    uint256 public taxRate2 = 48;
-    uint256 public taxRate3 = 23;
-    uint256 public taxRate4 = 4;
+    uint256 public taxRateDiamond = 100;
+    uint256 public taxRateGold = 48;
+    uint256 public taxRateSilver = 23;
+    uint256 public taxRateBronze = 4;
     
  
     uint256 public depositIndex;
-    bool em1schedule = true;
+    bool public em2schedule = false;
 
  
     
@@ -1469,19 +1473,25 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
         expiration = block.number + _expiration;
         erc20Address = _erc20Address;
         _pause();
-        landsharelock = block.timestamp + 5 minutes;
+        landsharelock = block.timestamp + 14 days;
+    }
+
+    function deedCheck (uint256 tokenId) public view returns (uint256){
+       return IDeedCheck(stakingDestinationAddress).deedCheck(tokenId);
     }
 
     function calcTaxRate(uint256 tokenId) internal view returns (uint256 tax){
        
-       if(tokenId <= 55){
-         return taxRate1;
-       }else if(tokenId <= 155){
-         return taxRate2;
-       }else if(tokenId <= 305){
-         return taxRate3;
+       if(deedCheck(tokenId) == 4){
+         return taxRateDiamond;
+       }else if(deedCheck(tokenId) == 3){
+         return taxRateGold;
+       }else if(deedCheck(tokenId) == 2){
+         return taxRateSilver;
+       }else if(deedCheck(tokenId) == 1){
+         return taxRateBronze;
        }else{
-         return taxRate4;
+           return 0;
        }
         
     }
@@ -1520,20 +1530,20 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
       erc20Address = _erc20Address;
     }
 
-    function setTaxRate1(uint256 _newTax) public onlyOwner() {
-      taxRate1 = _newTax;
+    function setTaxRateBronze(uint256 _newTax) public onlyOwner() {
+      taxRateBronze = _newTax;
     }
 
-    function setTaxRate2(uint256 _newTax) public onlyOwner() {
-      taxRate2 = _newTax;
+    function setTaxRateSilver(uint256 _newTax) public onlyOwner() {
+      taxRateSilver = _newTax;
     }
 
-    function setTaxRate3(uint256 _newTax) public onlyOwner() {
-      taxRate3 = _newTax;
+    function setTaxRateGold(uint256 _newTax) public onlyOwner() {
+      taxRateGold = _newTax;
     }
 
-    function setTaxRate4(uint256 _newTax) public onlyOwner() {
-      taxRate4 = _newTax;
+    function setTaxRateDiamond(uint256 _newTax) public onlyOwner() {
+      taxRateDiamond = _newTax;
     }
     
 
@@ -1595,7 +1605,7 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
         for (uint256 i; i < tokenIds.length; i++) {
            IERC721(stakingDestinationAddress).safeTransferFrom(msg.sender,address(this),tokenIds[i],"");
            _deposits[msg.sender].add(tokenIds[i]);
-          if(em1schedule == true){
+          if(em2schedule == false){
 
             depositAdd[depositIndex] = msg.sender;
             depositTok[depositIndex] = tokenIds[i];
@@ -1607,6 +1617,7 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
 
     //claim emissions schedule 1
      function claimEm1() external whenNotPaused nonReentrant(){
+      require(em2schedule == true, "Not emmission schedule 2");
       uint256 reward; 
    
       reward = em1[msg.sender];
@@ -1656,9 +1667,10 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
         
       } 
       rate = _rate;
+      em2schedule = true;
     }  
 
-       function setem1(bool _set) external onlyOwner{
-        em1schedule = _set;
+       function setem2(bool _set) external onlyOwner{
+        em2schedule = _set;
     }
 }
