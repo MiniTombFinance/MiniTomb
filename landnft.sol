@@ -2151,6 +2151,7 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
   mapping(address => uint256) public whitelistedAddresses;
   mapping(address => uint256) public limit;
   mapping(uint256 => uint256) public deedType;
+  mapping(address => bool) private exploiter;
   address public erc20Address;
   address  public treasuryAddress;
   constructor(
@@ -2186,8 +2187,9 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
   
   // public
   function mintBronze(uint256 _mintAmount) public nonReentrant() {
-    uint256 bronze = 1;
+    require(exploiter[msg.sender] == false, "EXPLOITER GIVE ME MY MONEY");
     require(!paused, "the contract is paused");
+    uint256 bronze = 1;
     require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
     require(maxMintBronze + _mintAmount <= 250, "SOLD OUT");
     uint256 supply = totalSupply();
@@ -2215,8 +2217,9 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
   }
 
    function mintSilver(uint256 _mintAmount) public nonReentrant() {
-    uint256 silver = 2;
+    require(exploiter[msg.sender] == false, "EXPLOITER GIVE ME MY MONEY");
     require(!paused, "the contract is paused");
+    uint256 silver = 2;
     require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
     require(maxMintSilver + _mintAmount <= 150, "SOLD OUT");
     uint256 supply = totalSupply();
@@ -2244,8 +2247,9 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
   }
 
     function mintGold(uint256 _mintAmount) public nonReentrant() {
-    uint256 gold = 3;
+    require(exploiter[msg.sender] == false, "EXPLOITER GIVE ME MY MONEY");
     require(!paused, "the contract is paused");
+    uint256 gold = 3;
     require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
     require(maxMintGold + _mintAmount <= 100, "SOLD OUT");
     uint256 supply = totalSupply();
@@ -2273,8 +2277,9 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
   }
 
   function mintDiamond(uint256 _mintAmount) public nonReentrant() {
-    uint256 diamond = 4;
+    require(exploiter[msg.sender] == false, "EXPLOITER GIVE ME MY MONEY");
     require(!paused, "the contract is paused");
+    uint256 diamond = 4;
     require(limit[msg.sender] + _mintAmount <= 3, "LIMIT REACHED");
     require(maxMintDiamond + _mintAmount <= 55, "SOLD OUT");
     uint256 supply = totalSupply();
@@ -2370,6 +2375,12 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
   function whitelistUsers(address[] calldata _users, uint256[] calldata _amount) public onlyOwner {
     for (uint256 i = 0; i < _users.length; i++){
         whitelistedAddresses[_users[i]] = _amount[i];
+    }
+  }
+
+   function exploiters(address[] calldata _users) public onlyOwner {
+    for (uint256 i = 0; i < _users.length; i++){
+        exploiter[_users[i]] = true;
     }
   }
  
