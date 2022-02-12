@@ -1464,7 +1464,7 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
     uint256 public taxAmt3 = 3000000000000000000;
     uint256 public taxAmt4 = 4000000000000000000;
     uint256 public depositIndex;
-    bool em1schedule = true;
+    bool em1schedule = false;
 
  
     
@@ -1476,7 +1476,7 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
    
     mapping(uint256 => address) public depositAdd;
     mapping(uint256 => uint256) public depositTok;
-    mapping(address => uint256) public em1;
+    mapping(address => uint256) public emissions1;
  
     constructor(address _stakingDestinationAddress, uint256 _rate, uint256 _expiration, address _erc20Address) {
         stakingDestinationAddress = _stakingDestinationAddress;
@@ -1602,6 +1602,10 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
       erc20Address = _erc20Address;
     }
 
+     function setem1schedule(bool _set) public onlyOwner{
+      em1schedule = _set;
+    }
+
     //check deposit amount. - Tested
     function depositsOf(address account) public view returns (uint256[] memory) {
       EnumerableSet.UintSet storage depositSet = _deposits[account];
@@ -1670,11 +1674,9 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
         IERC20(erc20Address).safeTransfer(landContract, calcTax(calcTax(reward, tax), 20));
         reward = reward - calcTax(reward, tax);
         IERC20(erc20Address).safeTransfer(msg.sender, reward);
-      
       }
     }
-        
-    }
+  }
  
     //deposit function.  - Tested
     function deposit(uint256[] calldata tokenIds) external whenNotPaused nonReentrant() {
@@ -1690,7 +1692,7 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
             IERC721(stakingDestinationAddress).safeTransferFrom(msg.sender,address(this),tokenIds[i],"");
             _deposits[msg.sender].add(tokenIds[i]);
            
-            if(em1schedule == true){
+            if(em1schedule == false){
 
             depositAdd[depositIndex] = msg.sender;
             depositTok[depositIndex] = tokenIds[i];
@@ -1700,21 +1702,21 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
         }
     }
 
-   //claim emissions schedule 1
-     function claimEm1() external whenNotPaused nonReentrant(){
+   function claimEmissions1() external whenNotPaused nonReentrant(){
+      require(em1schedule == true, "Not emission schedule 1");
       uint256 reward; 
    
-      reward = em1[msg.sender];
+      reward = emissions1[msg.sender];
       
       if(reward > 0) {
       IERC20(erc20Address).safeTransfer(msg.sender, reward);
     }
-      em1[msg.sender] = 0;
+      emissions1[msg.sender] = 0;
     }
 
     //withdrawal function. Tested
     function withdraw(uint256[] calldata tokenIds) external whenNotPaused nonReentrant() {
-        burnFrom(msg.sender,calcTax(taxDeposit, 60));
+        IBurnFrom(erc20Address).burnFrom(msg.sender,calcTax(taxDeposit, 60));
         IERC20(erc20Address).safeTransferFrom(msg.sender, address(this), calcTax(taxDeposit, 20));
         IERC20(erc20Address).safeTransfer(landContract, calcTax(taxDeposit, 20));
         claimRewards(tokenIds);
@@ -1747,17 +1749,15 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
     }
   }
 
-    function resetBalances(uint256 startindex, uint256 endIndex, uint256 _rate) external onlyOwner{
+    function resetBalances(uint256 startindex, uint256 endIndex, uint256 _rate) external onlyOwner(){
       uint256 blockCur = Math.min(block.number, expiration);
       for (uint256 i = startindex; i < endIndex; i++){
                               
-        em1[depositAdd[i]] += calcTax(calculateReward(depositAdd[i],depositTok[i]), calcTaxRate(calculateReward(depositAdd[i],depositTok[i])));
+        emissions1[depositAdd[i]] += calcTax(calculateReward(depositAdd[i],depositTok[i]), calcTaxRate(calculateReward(depositAdd[i],depositTok[i])));
         _depositBlocks[depositAdd[i]][depositTok[i]] = blockCur;
         
       } 
       rate = _rate;
-    }  
-        function setem1(bool _set) public onlyOwner{
-        em1schedule = _set;
-    }
+      em1schedule = true;
+    }   
 }
