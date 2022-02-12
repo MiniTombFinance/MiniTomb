@@ -1498,7 +1498,7 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
        }else if(deedCheck(tokenId) == 1){
          return taxRateBronze;
        }else{
-           return 0;
+         return 0;
        }
     }
     // gets x %
@@ -1553,11 +1553,11 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
     }
 
     function setEmissions1(bool _em1schedule) external onlyOwner(){
-        em1schedule = _em1schedule;
+      em1schedule = _em1schedule;
     }
 
     function setEmissions2(bool _em2schedule) external onlyOwner(){
-        em2schedule = _em2schedule;
+      em2schedule = _em2schedule;
     }
     
     //check deposit amount. - Tested
@@ -1659,9 +1659,7 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
             require( _deposits[msg.sender].contains(tokenIds[i]),"Staking: token not deposited");
             _deposits[msg.sender].remove(tokenIds[i]);
             IERC721(stakingDestinationAddress).safeTransferFrom(address(this), msg.sender,tokenIds[i],"");
-            
         }
-        
     }
 
      //withdrawal function. 
@@ -1684,33 +1682,38 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
         return IERC721Receiver.onERC721Received.selector;
     }
 
-    function resetBalances(uint256 startindex, uint256 endIndex, uint256 _rate) external onlyOwner(){
+    function resetBalances(uint256 startindex, uint256 endIndex) external onlyOwner(){
       uint256 blockCur = Math.min(block.number, expiration);
       for (uint256 i = startindex; i < endIndex; i++){
                               
         emissions1[depositAdd[i]] += calcTax(calculateReward(depositAdd[i],depositTok[i]), calcTaxRate(depositTok[i]));
         _depositBlocks[depositAdd[i]][depositTok[i]] = blockCur;
-        
       } 
+     
+    }  
+    function resetVar(uint256 _rate) external onlyOwner(){
       rate = _rate;
       em1schedule = true;
       taxRateBronze = 5;
       taxRateSilver = 24;
-    }  
+    }
 
-     function resetBalances2(uint256 startindex, uint256 endIndex, uint256 _rate, address _erc20Address) external onlyOwner(){
+     function resetBalances2(uint256 startindex, uint256 endIndex) external onlyOwner(){
       uint256 blockCur = Math.min(block.number, expiration);
       for (uint256 i = startindex; i < endIndex; i++){
                               
         emissions2[depositAdd[i]] += calcTax(calculateReward(depositAdd[i],depositTok[i]), calcTaxRate(depositTok[i]));
         _depositBlocks[depositAdd[i]][depositTok[i]] = blockCur;
-        
       } 
+    
+    }  
+
+     function resetVar2(uint256 _rate,  address _erc20Address) external onlyOwner(){
       rate = _rate;
       em2schedule = true;
       taxRateBronze = 7;
       taxRateSilver = 25;
       taxRateGold = 50;
       erc20Address = _erc20Address;
-    }  
+    }
 }
