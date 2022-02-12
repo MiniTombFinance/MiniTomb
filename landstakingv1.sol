@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: MIT
+
+//Imports
 pragma solidity ^0.8.0;
 /**
  * @dev Provides information about the current execution context, including the
@@ -1428,6 +1430,8 @@ library SafeERC20 {
     }
 }
 
+// End of Imports
+
 interface IDeedCheck {
     function deedCheck(uint256 tokenId) external view returns(uint256);
 }
@@ -1440,7 +1444,7 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
     address nullAddress = 0x0000000000000000000000000000000000000000;
     address public stakingDestinationAddress;
     address public erc20Address;
-    
+    address public erc20Address2;
     
   
     uint256 public expiration; 
@@ -1455,6 +1459,7 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
     
  
     uint256 public depositIndex;
+    bool public em1schedule = false;
     bool public em2schedule = false;
 
  
@@ -1464,14 +1469,16 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
     mapping(address => mapping(uint256 => uint256)) public _depositBlocks;
     mapping(uint256 => address) public depositAdd;
     mapping(uint256 => uint256) public depositTok;
-    mapping(address => uint256) public em1;
+    mapping(address => uint256) public emissions1;
+    mapping(address => uint256) public emissions2;
     uint256 public landsharelock;
 
-    constructor(address _stakingDestinationAddress, uint256 _rate, uint256 _expiration, address _erc20Address) {
+    constructor(address _stakingDestinationAddress, uint256 _rate, uint256 _expiration, address _erc20Address, address _erc20Address2) {
         stakingDestinationAddress = _stakingDestinationAddress;
         rate = _rate;
         expiration = block.number + _expiration;
         erc20Address = _erc20Address;
+        erc20Address2 = _erc20Address2;
         _pause();
         landsharelock = block.timestamp + 14 days;
     }
@@ -1493,10 +1500,7 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
        }else{
            return 0;
        }
-        
     }
-
-
     // gets x %
    function calcTax(uint256 _amount, uint256 taxRate) internal pure returns (uint256){
         uint256 taxedAmount;
@@ -1504,18 +1508,16 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
         return taxedAmount;
     }
  
-    function pause() public onlyOwner {
+    function pause() public onlyOwner() {
         _pause();
     }
  
-    function unpause() public onlyOwner {
+    function unpause() public onlyOwner() {
         _unpause();
     }
     
- 
 /* STAKING MECHANICS */
  
-    
         // 277777777777777.66666666666666667 for aprox 25 a day at 100,000 blocks per day
     function setRate(uint256 _rate) public onlyOwner() {
       rate = _rate;
@@ -1528,6 +1530,10 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
 
       function seterc20Address(address _erc20Address) public onlyOwner() {
       erc20Address = _erc20Address;
+    }
+
+     function seterc20Address2(address _erc20Address2) public onlyOwner() {
+      erc20Address2 = _erc20Address2;
     }
 
     function setTaxRateBronze(uint256 _newTax) public onlyOwner() {
@@ -1545,8 +1551,15 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
     function setTaxRateDiamond(uint256 _newTax) public onlyOwner() {
       taxRateDiamond = _newTax;
     }
-    
 
+    function setEmissions1(bool _em1schedule) external onlyOwner(){
+        em1schedule = _em1schedule;
+    }
+
+    function setEmissions2(bool _em2schedule) external onlyOwner(){
+        em2schedule = _em2schedule;
+    }
+    
     //check deposit amount. - Tested
     function depositsOf(address account) public view returns (uint256[] memory) {
       EnumerableSet.UintSet storage depositSet = _deposits[account];
@@ -1570,7 +1583,6 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
       return rewards;
     }
 
- 
     //reward amount by address/tokenId - Tested
     function calculateReward(address account, uint256 tokenId) public view returns (uint256) {
       require(Math.min(block.number, expiration) > _depositBlocks[account][tokenId], "Invalid blocks");
@@ -1599,36 +1611,46 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
        
         require(msg.sender != stakingDestinationAddress, "Invalid address");
         
-        
         claimRewards(tokenIds);
  
         for (uint256 i; i < tokenIds.length; i++) {
            IERC721(stakingDestinationAddress).safeTransferFrom(msg.sender,address(this),tokenIds[i],"");
            _deposits[msg.sender].add(tokenIds[i]);
-          if(em2schedule == false){
+          if(em1schedule == false){
 
             depositAdd[depositIndex] = msg.sender;
             depositTok[depositIndex] = tokenIds[i];
             depositIndex++;
-      
           }
         }     
       }
 
-    //claim emissions schedule 1
-     function claimEm1() external whenNotPaused nonReentrant(){
-      require(em2schedule == true, "Not emmission schedule 2");
+    //claim share emissions schedule 1
+     function claimEmissions1() external whenNotPaused nonReentrant(){
+      require(em1schedule == true, "Not emission schedule 1");
       uint256 reward; 
    
-      reward = em1[msg.sender];
+      reward = emissions1[msg.sender];
       
       if(reward > 0) {
-      IERC20(erc20Address).safeTransfer(msg.sender, reward);
+      IERC20(erc20Address2).safeTransfer(msg.sender, reward);
     }
-      em1[msg.sender] = 0;
+      emissions1[msg.sender] = 0;
     }
 
- 
+      //claim share emissions schedule 2
+     function claimEmissions2() external whenNotPaused nonReentrant(){
+      require(em2schedule == true, "Not emission schedule 2");
+      uint256 reward; 
+   
+      reward = emissions2[msg.sender];
+      
+      if(reward > 0) {
+      IERC20(erc20Address2).safeTransfer(msg.sender, reward);
+    }
+      emissions2[msg.sender] = 0;
+    }
+
     //withdrawal function. Tested
     function withdraw(uint256[] calldata tokenIds) external whenNotPaused nonReentrant() {
         require(landsharelock <= block.timestamp, "Land Share Lock");
@@ -1643,13 +1665,17 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
     }
 
      //withdrawal function. 
-    function withdrawAllTokens() external onlyOwner {
+    function withdrawAllTokens() external onlyOwner() {
         uint256 tokenSupply = IERC20(erc20Address).balanceOf(address(this));
         IERC20(erc20Address).safeTransfer(msg.sender, tokenSupply);
     }
- 
+
+    function withdrawAllTokens2() external onlyOwner() {
+        uint256 tokenSupply = IERC20(erc20Address2).balanceOf(address(this));
+        IERC20(erc20Address2).safeTransfer(msg.sender, tokenSupply);
+    }
    
-    function withdrawTokens(address _erc20Address, uint256 _amount) external onlyOwner {
+    function withdrawTokens(address _erc20Address, uint256 _amount) external onlyOwner() {
       
         IERC20(_erc20Address).safeTransfer(msg.sender, _amount);
     }
@@ -1658,19 +1684,33 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
         return IERC721Receiver.onERC721Received.selector;
     }
 
-    function resetBalances(uint256 startindex, uint256 endIndex, uint256 _rate) external onlyOwner{
+    function resetBalances(uint256 startindex, uint256 endIndex, uint256 _rate) external onlyOwner(){
       uint256 blockCur = Math.min(block.number, expiration);
       for (uint256 i = startindex; i < endIndex; i++){
                               
-        em1[depositAdd[i]] += calcTax(calculateReward(depositAdd[i],depositTok[i]), calcTaxRate(depositTok[i]));
+        emissions1[depositAdd[i]] += calcTax(calculateReward(depositAdd[i],depositTok[i]), calcTaxRate(depositTok[i]));
+        _depositBlocks[depositAdd[i]][depositTok[i]] = blockCur;
+        
+      } 
+      rate = _rate;
+      em1schedule = true;
+      taxRateBronze = 5;
+      taxRateSilver = 24;
+    }  
+
+     function resetBalances2(uint256 startindex, uint256 endIndex, uint256 _rate, address _erc20Address) external onlyOwner(){
+      uint256 blockCur = Math.min(block.number, expiration);
+      for (uint256 i = startindex; i < endIndex; i++){
+                              
+        emissions2[depositAdd[i]] += calcTax(calculateReward(depositAdd[i],depositTok[i]), calcTaxRate(depositTok[i]));
         _depositBlocks[depositAdd[i]][depositTok[i]] = blockCur;
         
       } 
       rate = _rate;
       em2schedule = true;
+      taxRateBronze = 7;
+      taxRateSilver = 25;
+      taxRateGold = 50;
+      erc20Address = _erc20Address;
     }  
-
-       function setem2(bool _set) external onlyOwner{
-        em2schedule = _set;
-    }
 }
