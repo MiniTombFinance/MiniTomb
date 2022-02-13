@@ -1477,9 +1477,7 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
     mapping(uint256 => bool) private uber;
     mapping(address => bool) private exploiter;
    
-    mapping(uint256 => address) public depositAdd;
-    mapping(uint256 => uint256) public depositTok;
-    mapping(address => uint256) public emissions1;
+    
  
     constructor(address _stakingDestinationAddress, uint256 _rate, uint256 _expiration, address _erc20Address) {
         stakingDestinationAddress = _stakingDestinationAddress;
