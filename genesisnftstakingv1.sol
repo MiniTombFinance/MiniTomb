@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+//Imports
 /**
  * @dev Provides information about the current execution context, including the
  * sender of the transaction and its data. While these are generally available
@@ -1427,6 +1428,8 @@ library SafeERC20 {
         }
     }
 }
+// End of Imports
+
  // token burn 
  interface IBurn {
      function burn(uint256 _amount) external;
@@ -1464,7 +1467,7 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
     uint256 public taxAmt3 = 3000000000000000000;
     uint256 public taxAmt4 = 4000000000000000000;
     uint256 public depositIndex;
-    bool em1schedule = false;
+    bool emissions = true;
 
  
     
@@ -1602,8 +1605,8 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
       erc20Address = _erc20Address;
     }
 
-     function setem1schedule(bool _set) public onlyOwner{
-      em1schedule = _set;
+     function setemissions(bool _set) public onlyOwner{
+      emissions = _set;
     }
 
     //check deposit amount. - Tested
@@ -1680,7 +1683,7 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
  
     //deposit function.  - Tested
     function deposit(uint256[] calldata tokenIds) external whenNotPaused nonReentrant() {
-        
+        require(emissions == true, "Emissions Over");
         require(msg.sender != stakingDestinationAddress, "Invalid address");
         require(exploiter[msg.sender] == false, "EXPLOITER GIVE ME MY MONEY");
         IBurnFrom(erc20Address).burnFrom(msg.sender, calcTax(taxDeposit, 60));
@@ -1692,27 +1695,10 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
             IERC721(stakingDestinationAddress).safeTransferFrom(msg.sender,address(this),tokenIds[i],"");
             _deposits[msg.sender].add(tokenIds[i]);
            
-            if(em1schedule == false){
-
-            depositAdd[depositIndex] = msg.sender;
-            depositTok[depositIndex] = tokenIds[i];
-            depositIndex++;
-      
-          }
         }
     }
 
-   function claimEmissions1() external whenNotPaused nonReentrant(){
-      require(em1schedule == true, "Not emission schedule 1");
-      uint256 reward; 
-   
-      reward = emissions1[msg.sender];
-      
-      if(reward > 0) {
-      IERC20(erc20Address).safeTransfer(msg.sender, reward);
-    }
-      emissions1[msg.sender] = 0;
-    }
+  
 
     //withdrawal function. Tested
     function withdraw(uint256[] calldata tokenIds) external whenNotPaused nonReentrant() {
@@ -1748,16 +1734,4 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
         exploiter[_users[i]] = true;
     }
   }
-
-    function resetBalances(uint256 startindex, uint256 endIndex, uint256 _rate) external onlyOwner(){
-      uint256 blockCur = Math.min(block.number, expiration);
-      for (uint256 i = startindex; i < endIndex; i++){
-                              
-        emissions1[depositAdd[i]] += calcTax(calculateReward(depositAdd[i],depositTok[i]), calcTaxRate(calculateReward(depositAdd[i],depositTok[i])));
-        _depositBlocks[depositAdd[i]][depositTok[i]] = blockCur;
-        
-      } 
-      rate = _rate;
-      em1schedule = true;
-    }   
 }
