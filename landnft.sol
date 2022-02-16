@@ -2141,7 +2141,7 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
   string public baseURIDiamond;
   string public baseExtension = ".json";
   uint256 public maxSupply = 555;
-  uint256 public maxMintAmount = 3;
+  uint256 public maxMintAmount = 1;
   uint256 public maxMintBronze = 0;
   uint256 public maxMintSilver = 0;
   uint256 public maxMintGold = 0;
@@ -2337,8 +2337,6 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
   }
  
   //only owner
- 
-
  
   function setmaxMintAmount(uint256 _newmaxMintAmount) public onlyOwner {
     maxMintAmount = _newmaxMintAmount;
