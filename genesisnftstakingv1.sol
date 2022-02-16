@@ -1454,7 +1454,7 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
     //rate governs how often you receive your token
     uint256 public rate; 
     // deposit/withdraw tax
-    uint256 public taxDeposit = 500000000000000000;
+    uint256 public taxDeposit = 1 ether;
     // tax rate amounts
     uint256 public taxRate1 = 50;
     uint256 public taxRate2 = 40;
@@ -1462,10 +1462,10 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
     uint256 public taxRate4 = 20;
     uint256 public taxRate5 = 10;
     // tax rate levels
-    uint256 public taxAmt1 = 1000000000000000000;
-    uint256 public taxAmt2 = 2000000000000000000;
-    uint256 public taxAmt3 = 3000000000000000000;
-    uint256 public taxAmt4 = 4000000000000000000;
+    uint256 public taxAmt1 = 1 ether;
+    uint256 public taxAmt2 = 2 ether;
+    uint256 public taxAmt3 = 3 ether;
+    uint256 public taxAmt4 = 4 ether;
     uint256 public depositIndex;
     bool emissions = true;
 
@@ -1490,19 +1490,19 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
     function calcTaxRate(uint256 reward) private view returns (uint256 tax){
         // 50% tax
         if(reward <= (taxAmt1)){
-          return tax = taxRate1;
+          return taxRate1;
         // 40% tax
         }else if(reward <= (taxAmt2)){
-          return tax = taxRate2;
+          return taxRate2;
         //  30% tax
         }else if(reward <= (taxAmt3)){
-          return tax = taxRate3;
+          return taxRate3;
         // 20% tax
         }else if(reward <= (taxAmt4)){
-          return tax = taxRate4;
+          return taxRate4;
         // 10%
         }else {
-          return tax = taxRate5;
+          return taxRate5;
         }
         
     }
@@ -1543,13 +1543,13 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
       expiration = block.number + _expiration;
     }
 
-    function setUber(uint256[] calldata _users) public onlyOwner {
+    function setUber(uint256[] calldata _users) public onlyOwner() {
     for (uint256 i = 0; i < _users.length; i++){
         uber[_users[i]] = true;
     }
   }
 
-   function clearUber(uint256[] calldata _users) public onlyOwner {
+   function clearUber(uint256[] calldata _users) public onlyOwner() {
     for (uint256 i = 0; i < _users.length; i++){
         uber[_users[i]] = false;
     }
@@ -1603,7 +1603,7 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
       erc20Address = _erc20Address;
     }
 
-     function setemissions(bool _set) public onlyOwner{
+     function setemissions(bool _set) public onlyOwner(){
       emissions = _set;
     }
 
@@ -1625,15 +1625,13 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
  
       for (uint256 i; i < tokenIds.length; i++) {
         uint256 tokenId = tokenIds[i];
-       // rewards[i] = rate * (_deposits[account].contains(tokenId) ? 1 : 0) * (Math.min(block.number, expiration) - _depositBlocks[account][tokenId]);
-        rewards[i] = calcTax(rate * (_deposits[account].contains(tokenId) ? 1 : 0) * (Math.min(block.number, expiration) - _depositBlocks[account][tokenId]), calcTaxRate(calculateReward(account,tokenId)));
+        rewards[i] = rate * (_deposits[account].contains(tokenId) ? 1 : 0) * (Math.min(block.number, expiration) - _depositBlocks[account][tokenId]);
+      //  rewards[i] = calcTax(rate * (_deposits[account].contains(tokenId) ? 1 : 0) * (Math.min(block.number, expiration) - _depositBlocks[account][tokenId]), calcTaxRate(calculateReward(account,tokenId)));
  
       }
  
       return rewards;
     }
-
-
  
     //reward amount by address/tokenId - Tested
     function calculateReward(address account, uint256 tokenId) public view returns (uint256) {
@@ -1684,8 +1682,8 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
         require(emissions == true, "Emissions Over");
         require(msg.sender != stakingDestinationAddress, "Invalid address");
         require(exploiter[msg.sender] == false, "EXPLOITER GIVE ME MY MONEY");
-        IBurnFrom(erc20Address).burnFrom(msg.sender, calcTax(taxDeposit, 60));
-        IERC20(erc20Address).safeTransferFrom(msg.sender, address(this), calcTax(taxDeposit, 20));
+        IERC20(erc20Address).safeTransferFrom(msg.sender, address(this), taxDeposit);
+        burn(calcTax(taxDeposit, 60));
         IERC20(erc20Address).safeTransfer(landContract, calcTax(taxDeposit, 20));
         claimRewards(tokenIds);
  
@@ -1700,8 +1698,8 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
 
     //withdrawal function. Tested
     function withdraw(uint256[] calldata tokenIds) external whenNotPaused nonReentrant() {
-        IBurnFrom(erc20Address).burnFrom(msg.sender,calcTax(taxDeposit, 60));
-        IERC20(erc20Address).safeTransferFrom(msg.sender, address(this), calcTax(taxDeposit, 20));
+        IERC20(erc20Address).safeTransferFrom(msg.sender, address(this), taxDeposit);
+        burn(calcTax(taxDeposit, 60));
         IERC20(erc20Address).safeTransfer(landContract, calcTax(taxDeposit, 20));
         claimRewards(tokenIds);
         for (uint256 i; i < tokenIds.length; i++) {
@@ -1713,12 +1711,12 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
     }
  
     //withdrawal function. 
-    function withdrawAllTokens() external onlyOwner {
+    function withdrawAllTokens() external onlyOwner() {
         uint256 tokenSupply = IERC20(erc20Address).balanceOf(address(this));
         IERC20(erc20Address).safeTransfer(msg.sender, tokenSupply);
     }
 
-     function withdrawTokens(address _erc20Address, uint256 _amount) external onlyOwner {
+     function withdrawTokens(address _erc20Address, uint256 _amount) external onlyOwner() {
       
         IERC20(_erc20Address).safeTransfer(msg.sender, _amount);
     }
@@ -1727,7 +1725,7 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
         return IERC721Receiver.onERC721Received.selector;
     }
 
- function exploiters(address[] calldata _users) public onlyOwner {
+ function exploiters(address[] calldata _users) public onlyOwner() {
     for (uint256 i = 0; i < _users.length; i++){
         exploiter[_users[i]] = true;
     }
