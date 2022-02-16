@@ -1483,7 +1483,7 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
         landsharelock = block.timestamp + 14 days;
     }
 
-    function deedCheck (uint256 tokenId) public view returns (uint256){
+    function deedCheck (uint256 tokenId) internal view returns (uint256){
        return IDeedCheck(stakingDestinationAddress).deedCheck(tokenId);
     }
 
@@ -1617,7 +1617,6 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
            IERC721(stakingDestinationAddress).safeTransferFrom(msg.sender,address(this),tokenIds[i],"");
            _deposits[msg.sender].add(tokenIds[i]);
           if(em1schedule == false){
-
             depositAdd[depositIndex] = msg.sender;
             depositTok[depositIndex] = tokenIds[i];
             depositIndex++;
@@ -1684,7 +1683,7 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
 
     function resetBalances(uint256 startindex, uint256 endIndex) external onlyOwner(){
       uint256 blockCur = Math.min(block.number, expiration);
-      for (uint256 i = startindex; i < endIndex; i++){
+      for (uint256 i = startindex; i <= endIndex; i++){
                               
         emissions1[depositAdd[i]] += calcTax(calculateReward(depositAdd[i],depositTok[i]), calcTaxRate(depositTok[i]));
         _depositBlocks[depositAdd[i]][depositTok[i]] = blockCur;
@@ -1700,7 +1699,7 @@ contract miniLandStakingv1 is Ownable, IERC721Receiver, ReentrancyGuard, Pausabl
 
      function resetBalances2(uint256 startindex, uint256 endIndex) external onlyOwner(){
       uint256 blockCur = Math.min(block.number, expiration);
-      for (uint256 i = startindex; i < endIndex; i++){
+      for (uint256 i = startindex; i <= endIndex; i++){
                               
         emissions2[depositAdd[i]] += calcTax(calculateReward(depositAdd[i],depositTok[i]), calcTaxRate(depositTok[i]));
         _depositBlocks[depositAdd[i]][depositTok[i]] = blockCur;
