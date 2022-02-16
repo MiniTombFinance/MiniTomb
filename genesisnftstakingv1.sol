@@ -1454,7 +1454,7 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
     //rate governs how often you receive your token
     uint256 public rate; 
     // deposit/withdraw tax
-    uint256 public taxDeposit = 1 ether;
+    uint256 public taxDeposit = 500000000000000000;
     // tax rate amounts
     uint256 public taxRate1 = 50;
     uint256 public taxRate2 = 40;
@@ -1511,9 +1511,6 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
         IBurn(erc20Address).burn(_amount);
   }
 
-   function burnFrom(address _address, uint256 _amount) private {
-        IBurnFrom(erc20Address).burnFrom(_address, _amount);
-  }
     // gets x %
    function calcTax(uint256 _amount, uint256 taxRate) private pure returns (uint256){
         uint256 taxedAmount;
@@ -1626,8 +1623,6 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
       for (uint256 i; i < tokenIds.length; i++) {
         uint256 tokenId = tokenIds[i];
         rewards[i] = rate * (_deposits[account].contains(tokenId) ? 1 : 0) * (Math.min(block.number, expiration) - _depositBlocks[account][tokenId]);
-      //  rewards[i] = calcTax(rate * (_deposits[account].contains(tokenId) ? 1 : 0) * (Math.min(block.number, expiration) - _depositBlocks[account][tokenId]), calcTaxRate(calculateReward(account,tokenId)));
- 
       }
  
       return rewards;
