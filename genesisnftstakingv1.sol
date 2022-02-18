@@ -1435,10 +1435,6 @@ library SafeERC20 {
      function burn(uint256 _amount) external;
  }
 
-  interface IBurnFrom {
-     function burnFrom(address _address, uint256 _amount) external ;
- }
-
 contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet; 
@@ -1518,11 +1514,11 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
         return taxedAmount;
     }
  
-    function pause() public onlyOwner {
+    function pause() public onlyOwner() {
         _pause();
     }
  
-    function unpause() public onlyOwner {
+    function unpause() public onlyOwner() {
         _unpause();
     }
     
