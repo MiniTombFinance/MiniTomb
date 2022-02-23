@@ -1,3 +1,11 @@
+/**
+ *Submitted for verification at FtmScan.com on 2022-02-22
+*/
+
+/**
+ *Submitted for verification at FtmScan.com on 2022-02-17
+*/
+
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
@@ -2141,16 +2149,12 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
   string public baseURIDiamond;
   string public baseExtension = ".json";
   uint256 public maxSupply = 555;
-  uint256 public maxMintAmount = 1;
+  uint256 public maxMintAmount = 3;
   uint256 public maxMintBronze = 0;
   uint256 public maxMintSilver = 0;
   uint256 public maxMintGold = 0;
   uint256 public maxMintDiamond = 0;
-  uint256 public bronzePrice = 285000000000000000000;
-  uint256 public silverPrice = 1350000000000000000000;
-  uint256 public goldPrice = 2700000000000000000000;
-  uint256 public diamondPrice = 5400000000000000000000;
-  bool public paused = true;
+  bool public paused = false;
   bool public onlyWhitelisted = false;
   mapping(address => uint256) public whitelistedAddresses;
   mapping(address => uint256) public limit;
@@ -2158,6 +2162,12 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
   mapping(address => bool) private exploiter;
   address public erc20Address;
   address  public treasuryAddress;
+
+  uint256 public bronzePrice = 1;
+  uint256 public silverPrice = 2;
+  uint256 public goldPrice = 3;
+  uint256 public diamondPrice = 4;
+
   constructor(
     string memory _name,
     string memory _symbol,
@@ -2342,24 +2352,10 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
  
   //only owner
  
+
+ 
   function setmaxMintAmount(uint256 _newmaxMintAmount) public onlyOwner {
     maxMintAmount = _newmaxMintAmount;
-  }
-
-  function setBronzePrice(uint256 _price) public onlyOwner {
-    bronzePrice = _price;
-  }
-
-  function setSilverPrice(uint256 _price) public onlyOwner {
-    silverPrice = _price;
-  }
-
-  function setGoldPrice(uint256 _price) public onlyOwner {
-    goldPrice = _price;
-  }
-
-  function setDiamondPrice(uint256 _price) public onlyOwner {
-    diamondPrice = _price;
   }
  
   function setBaseURIDiamond(string memory _newBaseURI) public onlyOwner {
@@ -2396,10 +2392,18 @@ contract MiniLand is ERC721Enumerable, Ownable, ReentrancyGuard  {
     }
   }
 
-   function exploiters(address[] calldata _users) public onlyOwner {
+  function exploiters(address[] calldata _users) public onlyOwner {
     for (uint256 i = 0; i < _users.length; i++){
         exploiter[_users[i]] = true;
     }
+  }
+
+  function setMintPrice(uint256[] calldata _prices) public onlyOwner {
+    require(_prices.length == 4, "Invalid Price values");
+    bronzePrice = _prices[0];
+    silverPrice = _prices[1];
+    goldPrice = _prices[2];
+    diamondPrice = _prices[3];
   }
  
   function withdraw() public payable onlyOwner {
