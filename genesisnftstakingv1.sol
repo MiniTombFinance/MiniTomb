@@ -1450,7 +1450,7 @@ contract miniStaking is Ownable, IERC721Receiver, ReentrancyGuard, Pausable {
     //rate governs how often you receive your token
     uint256 public rate; 
     // deposit/withdraw tax
-    uint256 public taxDeposit = 500000000000000000;
+    uint256 public taxDeposit = 1 ether;
     // tax rate amounts
     uint256 public taxRate1 = 50;
     uint256 public taxRate2 = 40;
